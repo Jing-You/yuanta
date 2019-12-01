@@ -3,16 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# S1  假如ask1預測到上漲機率超過BIAS，直接價外買進，n個I080內停損或平倉。
+# S9  假如ask1預測到下跌機率超過BIAS，直接價內賣出，n個I080內停損或平倉。
 
-class Strategy1(Testback):
+class Strategy9(Testback):
     def __init__(self, data, buy_bias, stop_steps):
-        super(Strategy1, self).__init__(data)
+        super(Strategy9, self).__init__(data)
         self.buy_bias = buy_bias
-        self.is_long = True
+        self.is_long = False
         self.stop_steps = stop_steps
     def can_buy(self):
-        if self.possessing == 0 and self.row['nextask1p_label_pred_i'] >= self.buy_bias:
+        if self.possessing == 0 and self.row['nextask1p_label_pred_d'] >= self.buy_bias:
             return True
         else:
             return False
@@ -23,12 +23,12 @@ class Strategy1(Testback):
     def buy(self):
         self.possessing += 1
         self.possessing_time = 0
-        self.cost = self.lastest_ask1p
+        self.cost = self.lastest_bid1p
 
     def sell(self):
         self.possessing -= 1
         unrealized_profit = self.unrealized_profit()
-        # print("ask1p", self.lastest_ask1p, "bid1p", self.lastest_bid1p, "cost", self.cost, "lastest_price", self.lastest_price,"unrealized_profit", unrealized_profit)
+        # print("ask1p", self.lastest_ask1p, "bid1p", self.lastest_bid1p, "cost", self.cost, "unrealized_profit", unrealized_profit)
         if unrealized_profit > 0:
             self.earnings.append(unrealized_profit)
         else:
@@ -60,11 +60,10 @@ if __name__ == "__main__":
     # print("num of bid1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextbid1p_label_pred_i'] > BIAS))
     # print("num of ask1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextask1p_label_pred_i'] > BIAS))
 
-
     for stop_steps in [5, 10, 15, 20, 25]:
         print("stop_steps:  ", stop_steps)
-        S1 = Strategy1(
+        S9 = Strategy9(
             data=data,
             buy_bias=BIAS,
             stop_steps=stop_steps)
-        S1.run()
+        S9.run()

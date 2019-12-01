@@ -3,19 +3,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-# S1  假如ask1預測到上漲機率超過BIAS，直接價外買進，n個I080內停損或平倉。
+# S3  假如ask1預測到下跌機率超過BIAS，高掛空單，看n1個I080內有沒有機會下到空單，成交後，n2個I080內停損或平倉。
 
-class Strategy1(Testback):
-    def __init__(self, data, buy_bias, stop_steps):
-        super(Strategy1, self).__init__(data)
-        self.buy_bias = buy_bias
-        self.is_long = True
+class Strategy3(Testback):
+    def __init__(self, data, order_bias, order_steps, stop_steps):
+        super(Strategy3, self).__init__(data)
+        self.order_bias = order_bias
+        self.is_long = False
         self.stop_steps = stop_steps
+        self.order_steps = order_steps
+
     def can_buy(self):
-        if self.possessing == 0 and self.row['nextask1p_label_pred_i'] >= self.buy_bias:
-            return True
-        else:
-            return False
+        return self.lastest_price >= self.order_price
 
     def can_sell(self):
         return (self.possessing_time > self.stop_steps or self.can_make_profit()) and self.possessing > 0
@@ -23,33 +22,36 @@ class Strategy1(Testback):
     def buy(self):
         self.possessing += 1
         self.possessing_time = 0
-        self.cost = self.lastest_ask1p
+        self.cost = self.lastest_price
 
     def sell(self):
         self.possessing -= 1
         unrealized_profit = self.unrealized_profit()
-        # print("ask1p", self.lastest_ask1p, "bid1p", self.lastest_bid1p, "cost", self.cost, "lastest_price", self.lastest_price,"unrealized_profit", unrealized_profit)
         if unrealized_profit > 0:
             self.earnings.append(unrealized_profit)
         else:
             self.losings.append(unrealized_profit)
-    
+
     def can_order(self):
-        return False
+        return self.num_order == 0 and self.row['nextask1p_label_pred_d'] >= self.order_bias
 
     def order(self):
-        pass
+        self.order_price = self.lastest_ask1p
+        self.num_order += 1
 
     def can_cancel_order(self):
-        return False
+        return self.order_time > self.order_steps
+
     def cancel_order(self):
-        pass
+        self.num_order = 0
+
 
 if __name__ == "__main__":
 
-
-    BIAS  = 0.4
+    BIAS = 0.4
     data = pd.read_csv("./data/0828_tick5_timestep40_askbid1p_withProb.csv")
+    order_steps = 5
+
     # plt.scatter(np.arange(len(data)), data.loc[:, 'nextask1p_label_pred_i'], label = 'ask1 increase')
     # # plt.scatter(np.arange(len(data)), data.loc[:, 'nextask1p_label_pred_d'], label = 'ask1 decrease')
     # plt.scatter(np.arange(len(data)), data.loc[:, 'nextbid1p_label_pred_i'], label = 'bid1 increase')
@@ -59,12 +61,14 @@ if __name__ == "__main__":
     # plt.show()
     # print("num of bid1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextbid1p_label_pred_i'] > BIAS))
     # print("num of ask1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextask1p_label_pred_i'] > BIAS))
-
-
-    for stop_steps in [5, 10, 15, 20, 25]:
-        print("stop_steps:  ", stop_steps)
-        S1 = Strategy1(
-            data=data,
-            buy_bias=BIAS,
-            stop_steps=stop_steps)
-        S1.run()
+    for order_steps in [5, 10, 15]:
+        for stop_steps in [5, 10]:
+            print("order_steps:  ", order_steps)
+            print("stop_steps:  ", stop_steps)
+            S3 = Strategy3(
+                data=data,
+                order_bias=BIAS,
+                order_steps = order_steps,
+                stop_steps = stop_steps)
+            S3.run()
+            print("-"*20)
