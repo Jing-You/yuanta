@@ -29,7 +29,6 @@ class Strategy10(Testback):
     def sell(self):
         self.possessing -= 1
         unrealized_profit = self.unrealized_profit()
-        # print("ask1p", self.lastest_ask1p, "bid1p", self.lastest_bid1p, "cost", self.cost, "unrealized_profit", unrealized_profit)
         if unrealized_profit > 0:
             self.earnings.append(unrealized_profit)
         else:
@@ -51,21 +50,11 @@ if __name__ == "__main__":
 
     BIAS  = 0.4
     data = pd.read_csv("./data/0828_tick5_timestep40_askbid1p_withProb.csv")
-    # plt.scatter(np.arange(len(data)), data.loc[:, 'nextask1p_label_pred_i'], label = 'ask1 increase')
-    # # plt.scatter(np.arange(len(data)), data.loc[:, 'nextask1p_label_pred_d'], label = 'ask1 decrease')
-    # plt.scatter(np.arange(len(data)), data.loc[:, 'nextbid1p_label_pred_i'], label = 'bid1 increase')
-    # # plt.scatter(np.arange(len(data)), data.loc[:, 'nextbid1p_label_pred_d'], label = 'bid1 decrease')
-    # plt.plot(np.arange(len(data)), [BIAS]*len(data))
-    # plt.legend()
-    # plt.show()
-    # print("num of bid1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextbid1p_label_pred_i'] > BIAS))
-    # print("num of ask1 increase points that prob exceed: %.2f"%(BIAS), np.sum(data.loc[:, 'nextask1p_label_pred_i'] > BIAS))
-
 
     for stop_steps in [5, 10, 15, 20, 25]:
         print("stop_steps:  ", stop_steps)
         S10 = Strategy10(
             data=data,
-            buy_bias=BIAS,a
+            buy_bias=BIAS,
             stop_steps=stop_steps)
         S10.run()
